@@ -6,6 +6,25 @@ using std::cin;
 using std::string;
 using std::vector;
 
+class Admin{
+    private:
+        string name;
+        string pwd;
+    public:
+        Admin(string name, string pwd){
+            this->name = name;
+            this->pwd = pwd;
+        }
+        bool login(string name, string pwd){
+            if(this->name == name && this->pwd == pwd){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+};
+
 class Acc {
 private:
     string username;
@@ -44,8 +63,11 @@ public:
 int main(){
     int key;
     int a;
+    Admin admin("admin", "123");
     System appSys;
-    while(true){
+    string username;
+    string pwd;
+    while(true) {
         cout<<"EEET2482/COSC2082 ASSIGNMENT \n"
         <<"VACATION HOUSE EXCHANGE APPLICATION \n"
         <<"\n"
@@ -58,7 +80,7 @@ int main(){
         << "Use the app as 1.Guest    2.Member    3.Admin \n"
         <<  "Enter your choice: ";
         cin >> key;
-        switch (key){
+        switch(key) {
             case 1:
                 cout << "This is your menu: \n"
                 << "1. View all available vacation houses \n"
@@ -66,12 +88,10 @@ int main(){
                 << "3. Exit \n"
                 << "Enter your choice: ";
                 cin >> a;
-                if(a == 3){
+                if(a == 3) {
                     return 0;
                 }
                 if (a == 2) {
-                    string username;
-                    string pwd;
                     Acc *newAcc = new Acc(username, pwd);
                     cout << "-----Register account--------\n";
                     cout << "Please enter username: ";
@@ -88,6 +108,36 @@ int main(){
                         cout << "Name = " << eachUser->getAccUsername() << 
                                 ", pwd = " << eachUser->getAccPassword();
                     }
+                    //reward 500 points for registration
+                    cout<<"Your are rewarded 500 credit points to your account!\n";
+                    cout<<"\n";
+                    break;
+                }
+
+            case 2:
+                cout << "Please enter your username: ";
+                cin >> username;
+                cout << "Please enter your password: ";
+                cin >> pwd;
+                //Check username and password
+                for (Acc *eachUser : appSys.users) {
+                    if(eachUser->getAccUsername() == username && eachUser->getAccPassword() == pwd){
+                        cout << "Login successful" << "\n";
+                        return 0;
+                    }
+                }
+                cout << "Login failed" << "\n";
+                break;
+                
+            case 3:
+                cout << "Please enter your username: ";
+                cin >> username;
+                cout << "Please enter your password: ";
+                cin >> pwd;
+                
+                //Check username and password
+                if(admin.login(username, pwd)) {
+                    cout << "Login successful" << "\n";
                     return 0;
                 }
         }
