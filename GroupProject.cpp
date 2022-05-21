@@ -94,6 +94,8 @@ public:
         this->rating = rating;
         this->minRating = minRating;
     }
+    Member* getHouseOwner(){return owner;}
+    Member* getHouseOccupier(){return occupier;}
 friend class System;
 };
 
@@ -280,6 +282,22 @@ void denyRequest(string username, vector<string> requestArr){
     myFile.close();
 }
 
+bool validateDate(string date){
+    if (isdigit(date[0]) && isdigit(date[1]) & date[2] == '-' & isdigit(date[3]) & isdigit(date[4])){
+        int day = std::stoi(date.substr(0, 2)); 
+        int month = std::stoi(date.substr(3, 2));
+        if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12){
+            if (day < 32){ return true; }
+        } else if (month == 2){ //Assuming Febuary has 29 days
+            if (day < 30){ return true; } 
+        } else {
+            if (month < 13 && day < 31){ return true; }
+        }
+
+    }
+    return false;
+}
+
 int main() {
     //key and a are user's choices
     int key;
@@ -389,6 +407,11 @@ int main() {
     } else {
         appSys.addHouse(new House(appSys.searchMemByUsername(username),city,startDate,endDate,points,appSys.searchMemByUsername(occupier),rating,minRating));
     }
+    //Reset these variables for input validation later
+    minRating = 11;
+    points = -1;
+    startDate = "";
+    endDate = "";
 
     //Read data from request.txt
     myFile.open("request.txt", std::ios::in);
@@ -454,7 +477,7 @@ int main() {
                             myFile.close();
 
                             //Reward 500 points for registration
-                            cout<<"Your are rewarded 500 credit points for registering your account!\n";
+                            cout<<"Your have been rewarded 500 credit points for registering your account!\n";
                             cout<<"\n";
                             return 0;
                         } else {
@@ -502,37 +525,83 @@ int main() {
                         }
                         if(a == 2) {
                             //Register a house
-                            cout << "Please enter the city your house: ";
-                            cin >> city;
-                            cout << "Please enter start Date (dd-mm): ";
-                            cin >> startDate;
-                            cout << "Please enter end Date (dd-mm): ";
-                            cin >> endDate;
-                            cout << "Please enter point consuming per day: ";
-                            cin >> points;
-                            cout << "Please enter minimum rating required: ";
-                            cin >> minRating;
-                            House *newHouse = new House(appSys.searchMemByUsername(username), city, startDate, endDate, points, NULL, 0, minRating);
-                            appSys.addHouse(newHouse);
-                            //Write mewHouse to file
-                            std::ofstream myFile("house.txt", std::ios_base::app);
-                            myFile << username << "," << city << "," 
-                            << startDate << "," << endDate << "," << points << "," << "0,0," << minRating << ",";
-                            myFile.close();
-                            cout << "House registered.\n";
+                            bool check; //A member can only register 1 house
+                            for (auto house: appSys.houses){
+                                if (house->getHouseOwner()->getMemberUsername() == username){ 
+                                    cout << "You have already registered a house.\n";
+                                    check = false;
+                                }
+                            }
+                            if (check){
+                                cin.ignore();
+                                while (loggedin == true){ //Re-use this boolean variable for validation purpose
+                                    cout << "Please enter the city your house: ";
+                                    getline(cin, city);
+                                    if (city == "Da Nang" || city == "Hanoi" || city == "Saigon"){
+                                        loggedin = false;
+                                    } else { cout << "Sorry this function is not available in your city.Please try another city.\n"; }
+                                } loggedin = true;
+                                while (startDate == ""){
+                                    cout << "Please enter start Date (dd-mm): ";
+                                    cin >> startDate;
+                                    if (!validateDate(startDate)){ 
+                                        cout << "Invalid input. Please make sure to input with format: dd-mm\n";
+                                        startDate = "";
+                                    } 
+                                }
+                                while (endDate == ""){
+                                    cout << "Please enter end Date (dd-mm): ";
+                                    cin >> endDate;
+                                    if (!validateDate(endDate)){ 
+                                        cout << "Invalid input. Please make sure to input with format: dd-mm\n";
+                                        endDate = "";
+                                    } 
+                                }
+                                while (points <= 0){
+                                    cout << "Please enter point consuming per day: ";
+                                    cin >> points;
+                                    if (points <= 0){ cout << "Points must be larger than 0 (You don't want your house to be free!)."; }
+                                }
+                                while (minRating > 10 || minRating < -10){
+                                    cout << "Please enter minimum rating required: ";
+                                    cin >> minRating;
+                                    if (minRating > 10 || minRating < -10){ cout << "Rating must be between -10 and 10.\n"; }
+                                }
+                                House *newHouse = new House(appSys.searchMemByUsername(username), city, startDate, endDate, points, NULL, 0, minRating);
+                                appSys.addHouse(newHouse);
+                                //Write mewHouse to file
+                                std::ofstream myFile("house.txt", std::ios_base::app);
+                                myFile << username << "," << city << "," 
+                                << startDate << "," << endDate << "," << points << "," << "0,0," << minRating << ",";
+                                myFile.close();
+                                cout << "House registered.\n";
+                            }
                         }
                         if(a == 3) {
                             //Search for houses (Any restriction is in the function)
                             appSys.viewHouses(username);
-                            cout << "Enter owner username of the house you want to send request, or type \"CANCEL\" to cancel: ";
-                            cin >> occupier;
-                            if (occupier != "CANCEL"){
-                                if (checkUsername(occupier)){ //Check if input is correct
-                                    //Store the request into file
-                                    std::ofstream myFile("request.txt", std::ios_base::app);
-                                    myFile << username << "," << occupier << ",";
-                                    myFile.close();
-                                } else { cout << "Invalid username.\n"; }
+                            bool check = true; //A member can only occupy 1 house
+                            for (auto house: appSys.houses){
+                                if (house->getHouseOccupier() != NULL){
+                                    if (house->getHouseOccupier()->getMemberUsername() == username){ 
+                                        cout << "You are currently occupying a house, you cannot select another once.\n";
+                                        check = false;
+                                    }
+                                }
+                            }
+                            if (check){
+                                cout << "Enter owner username of the house you want to send request, or type \"CANCEL\" to cancel: ";
+                                cin >> occupier;
+                                if (occupier != "CANCEL"){
+                                    if (checkUsername(occupier)){ //Check if input is correct
+                                        
+
+                                        //Store the request into file
+                                        std::ofstream myFile("request.txt", std::ios_base::app);
+                                        myFile << username << "," << occupier << ",";
+                                        myFile.close();
+                                    } else { cout << "Invalid username.\n"; }
+                                }
                             }
                         }
                         if(a == 4) {
