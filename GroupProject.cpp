@@ -67,13 +67,54 @@ public:
     friend class System;
 };
 
+class House {
+private:
+    Member* owner;
+    string city;
+    string startDate;
+    string endDate;
+    double points;
+    Member* occupier;
+    double rating;
+public:
+    House(){}
+    House(Member* owner, string city, string startDate, string endDate, double points, Member* occupier, double rating){
+        this->owner = owner;
+        this->city = city;
+        this->startDate = startDate;
+        this->endDate = endDate;
+        this->points = points;
+        this->occupier = occupier;
+        this->rating = rating;
+    }
+    // Getters
+    // string getCity() { return city; }
+    // string getStartDate() { return startDate; }
+    // string getEndDate() { return endDate; }
+    // string getPoints() { return points; }
+    
+    // Setters
+    // void setMemberUsername(string usrn) { username = usrn; };
+    // void setMemberPassword(string pass) { pwd = pass; };
+    // void setMemberFullname(string fn) { full_name = fn; }
+    // void setMemberPhoneNumber(string pn) { phone_num = pn; }
+    // void setMemberCredit(double cre) { credit = cre; }
+
+friend class System;
+};
+
 class System {
 public:
     vector<Member*> members;
+    vector<House*> houses;
     System(){};
 
     void addMember(Member* member){
         members.push_back(member);
+    }
+
+    void addHouse(House* house){
+        houses.push_back(house);
     }
 
     void viewMembers(){
@@ -88,9 +129,31 @@ public:
             << "---------------------------------\n";
         }
     }
+    void viewHouses(string username){
+        cout << "---------------------------------\n" 
+            <<"List of registered houses: \n";
+        for (auto house: houses) {
+            cout << "Host username: " << house->owner->getMemberUsername() << "\n"
+            << "Location: " << house->city << "\n" 
+            << "Points consuming per day: " << house->points << "\n" 
+            << "Occupier: " << house->occupier << "\n";
+            if (username == "Admin" || username != "Guest"){
+                cout << "Start date: " << house->startDate << "\n" 
+                << "End date: " << house->endDate << "\n" 
+                << "Rating: " << house->rating << "\n";
+            } cout << "---------------------------------\n";
+        }
+    }
+
+    Member* searchMemByUsername(string username){
+        for (auto mem: members) {
+            if (mem->username == username){return mem;}
+        }
+    }
 
 };
 
+//Function to check username while Guest register
 bool checkUsername(string username){   
     std::fstream myFile;
     myFile.open("account.txt", std::ios::in);
@@ -113,17 +176,49 @@ bool checkUsername(string username){
     return false;
 };
 
+void denyRequest(string username, vector<string> requestArr){
+    std::fstream myFile;
+    string line;
+    int count = 0;
+    vector<int> deleteIndex;
+    for (int i = 0; i < sizeof(requestArr); i++){
+        if (count == 1 && requestArr[i] == username){
+            deleteIndex.push_back(i-1);
+            deleteIndex.push_back(i);
+            count = 0;
+        } else if (count == 1){ count = 0; } 
+        else { count++; }
+    }
+    count = 0;
+    for (int index: deleteIndex){
+        index -= count;
+        requestArr.erase(requestArr.begin() + index);
+        count++;
+    }
+    myFile.open("request.txt", std::ios::out);
+    for (string request: requestArr){
+        myFile << request << ",";
+    }
+    myFile.close();
+}
+
 int main() {
+    //key and a are user's choices
     int key;
     int a;
+    
     Admin admin;
     System appSys;
-    string username;
-    string pwd;
-    string full_name;
-    string phone_num;
+    //For Member
+    string username, pwd, full_name, phone_num;
     double cre;
     char name[100] = {0};
+    bool loggedin = false;
+    //For House
+    string city, startDate, endDate;
+    double points;
+    //For request
+    vector<string> requestArr, requestTemp;
 
     //Read data from account.txt
     std::fstream myFile;
@@ -161,6 +256,65 @@ int main() {
     }
     appSys.addMember(new Member(username,pwd,full_name,phone_num,cre));
 
+    //Read data from house.txt
+    arr.clear();
+    string occupier;
+    double rating;
+    count = 1;
+    vector<string> houseArr;
+    myFile.open("house.txt", std::ios::in);
+    while(getline(myFile, line, ',')){
+        arr.push_back(line);
+    }
+    myFile.close();
+
+    for (int i = 0; i < arr.size(); i++){
+        if (count == 1){
+            username = arr[i];
+        }
+        if (count == 2){
+            city = arr[i];
+        }
+        if (count == 3){
+            startDate = arr[i];
+        }
+        if (count == 4){
+            endDate = arr[i];
+        }
+        if (count == 5){
+            points = std::stod(arr[i]);
+        }
+        if (count == 6){
+            occupier = arr[i];
+        }
+        if (count == 7){
+            rating = std::stod(arr[i]);
+        }
+        if (count == 8){
+            if(occupier == "0"){
+                appSys.addHouse(new House(appSys.searchMemByUsername(username),city,startDate,endDate,points,NULL,rating));
+            } else {
+                appSys.addHouse(new House(appSys.searchMemByUsername(username),city,startDate,endDate,points,appSys.searchMemByUsername(occupier),rating));
+            }
+            username = arr[i];
+            count = 1;
+        }
+        count++;
+    }
+    if(occupier == "0"){
+        appSys.addHouse(new House(appSys.searchMemByUsername(username),city,startDate,endDate,points,NULL,rating));
+    } else {
+        appSys.addHouse(new House(appSys.searchMemByUsername(username),city,startDate,endDate,points,appSys.searchMemByUsername(occupier),rating));
+    }
+
+    //Read data from request.txt
+    myFile.open("request.txt", std::ios::in);
+    while(getline(myFile, line, ',')){
+        requestArr.push_back(line);
+    }
+    myFile.close();
+
+
     while(true) {
         cout << "EEET2482/COSC2082 ASSIGNMENT \n"
         <<"VACATION HOUSE EXCHANGE APPLICATION \n"
@@ -176,13 +330,14 @@ int main() {
         cin >> key;
         switch(key) {
             case 1:
+                username = "Guest";
                 cout << "This is your menu: \n"
                 << "1. View all available vacation houses \n"
                 << "2. Register member \n"
                 << "3. Exit \n"
                 << "Enter your choice: ";
                 cin >> a;
-                if(a == 3) {
+                if(a == 32) {
                     return 0;
                 }
                 if (a == 2) {
@@ -224,6 +379,10 @@ int main() {
                     }
                     break;
                 }
+                if (a == 1){
+                    appSys.viewHouses(username);
+                    break;
+                }
 
             case 2:
                 cout << "Please enter your username: ";
@@ -234,11 +393,79 @@ int main() {
                 for (Member *eachMem : appSys.members) {
                     if(eachMem->getMemberUsername() == username && eachMem->getMemberPassword() == pwd) {
                         cout << "Login successful" << "\n";
-                        return 0;
+                        loggedin = true;
                     }
                 }
-                cout << "Login failed" << "\n";
-                break;
+                if (loggedin == false){
+                    cout << "Login failed" << "\n";
+                    break;
+                } else {
+                    while (a != 5){
+                        cout << "Welcome " << username << ":\n"
+                        << "1. See your information \n"
+                        << "2. Register a house \n"
+                        << "3. Search a house \n"
+                        << "4. View requests \n"
+                        << "5. Exit \n"
+                        << "Enter your choice: ";
+                        cin >> a;
+                        if(a == 1){
+                            cout << "-----------------------\n";
+                            cout << "Full name: " << appSys.searchMemByUsername(username)->getMemberFullname() << "\n"
+                            << "Phone number: " << appSys.searchMemByUsername(username)->getMemberPhoneNumber() << "\n";
+                            cout << "-----------------------\n";
+                        }
+                        if(a == 2) {
+                            cout << "Please enter the city your house: ";
+                            cin >> city;
+                            cout << "Please enter start Date (dd-mm): ";
+                            cin >> startDate;
+                            cout << "Please enter end Date (dd-mm): ";
+                            cin >> endDate;
+                            cout << "Please enter point consuming per day: ";
+                            cin >> points;
+                            House *newHouse = new House(appSys.searchMemByUsername(username), city, startDate, endDate, points, NULL, 0);
+                            appSys.addHouse(newHouse);
+                            //Write mewHouse to file
+                            std::ofstream myFile("house.txt", std::ios_base::app);
+                            myFile << username << "," << city << "," 
+                            << startDate << "," << endDate << "," << points << "," << "0,0,";
+                            myFile.close();
+                            cout << "House registered.\n";
+                        }
+                        if(a == 3) {
+                            appSys.viewHouses(username);
+                            cout << "Enter owner username of the house you want to send request: ";
+                            cin >> occupier;
+                            std::ofstream myFile("request.txt", std::ios_base::app);
+                            myFile << username << "," << occupier << ",";
+                            myFile.close();
+                        }
+                        if(a == 4) {
+                            count = 0;
+                            for (int i = 0; i < requestArr.size(); i++){
+                                if (count == 1 && requestArr[i] == username){
+                                    requestTemp.push_back(requestArr[i-1]);
+                                    count = 0;
+                                    loggedin = false; //Just re-use this boolean variable to print out information
+                                } else if(count == 1){ count = 0; } else { count++; }
+                            }
+                            cout << "----------------------\n" <<"Requests:\n";
+                            if (loggedin){ cout << "You have no request.\n"; } else {
+                                for (string request: requestTemp){
+                                    cout << "User: " << request << "\n";
+                                }
+                            }
+                            cout << "----------------------\n";
+                            cout << "Type the username you want to Approve, or type \"DENY\" to deny all request: ";
+                            cin >> occupier;
+                            if (occupier == "DENY"){
+                                denyRequest(username, requestArr);
+                                cout << "All requests have been denied.";
+                            }
+                        }
+                    } return 0;
+                }
                 
             case 3:
                 cout << "Please enter your username: ";
@@ -251,6 +478,7 @@ int main() {
                     cout << "Login successful" << "\n";
 
                     appSys.viewMembers();
+                    appSys.viewHouses(username);
 
                     return 0;
                 }
