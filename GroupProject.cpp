@@ -168,14 +168,18 @@ public:
     }
     void viewHouses(string username){
         //Get information fo the user (rating and credit points)
-        double cre = searchMemByUsername(username)->getMemberCredit();
-        double rating = searchMemByUsername(username)->getMemberRating();
+        double cre = 10000;
+        double rating = 10000;
+        if (username != "Guest" && username != "Admin"){
+            cre = searchMemByUsername(username)->getMemberCredit();
+            rating = searchMemByUsername(username)->getMemberRating();
+        }
 
         cout << "---------------------------------\n" 
             <<"List of registered houses: \n";
         for (auto house: houses) {
             //Check user's rating and credit points, only print out if enough
-            if ((username != "Admin" && username != "Guest") && cre >= totalPoints(house->startDate, house->endDate, house->points) && rating >= house->minRating){
+            if (cre > totalPoints(house->startDate, house->endDate, house->points) && rating > house->minRating){
                 cout << "Host username: " << house->owner->getMemberUsername() << "\n"
                 << "Location: " << house->city << "\n" 
                 << "Points consuming per day: " << house->points << "\n";
@@ -452,6 +456,7 @@ int main() {
                             //Reward 500 points for registration
                             cout<<"Your are rewarded 500 credit points for registering your account!\n";
                             cout<<"\n";
+                            return 0;
                         } else {
                             cout << "Username has already taken.\n";
                         }
@@ -578,12 +583,9 @@ int main() {
                     cout << "Login successful" << "\n";
                     //Automatically show all users and houses (no input require and stop program after that - usually used for testing) 
                     appSys.viewMembers();
-                    appSys.viewHouses(username);
-
+                    appSys.viewHouses("Admin");
                     return 0;
                 }
-
-                
         }
     }
 }
