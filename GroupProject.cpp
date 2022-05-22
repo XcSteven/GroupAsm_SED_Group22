@@ -184,7 +184,7 @@ public:
         }
     }
     
-    void viewHouses(string username, string startDate, string endDate){
+    void viewHouses(string username, string startDate, string endDate, string city){
         //Get information fo the user (rating and credit points)
         double cre = 10000;
         double rating = 10000;
@@ -199,19 +199,21 @@ public:
             //Check user's rating and credit points, only print out if enough
             if (cre > totalPoints(house->startDate, house->endDate, house->points) && rating >= house->minRating){
                 if (compareDates(startDate, house->startDate) && compareDates(house->endDate, endDate)) {
-                    cout << "Host username: " << house->owner->getMemberUsername() << "\n"
-                    << "Location: " << house->city << "\n" 
-                    << "Points consuming per day: " << house->points << "\n";
-                    cout << "Minimum Rating required: " << house->minRating << "\n"; 
-                    if (username == "Admin" || username != "Guest"){ //Guest restriction
-                        cout << "Occupier: ";
-                        if (house->occupier != NULL){
-                            cout << house->occupier->getMemberUsername();
-                        } else { cout << 0; }
-                        cout << "\nStart date: " << house->startDate << "\n" 
-                        << "End date: " << house->endDate << "\n" 
-                        << "Rating: " << house->rating << "\n";
-                    } cout << "---------------------------------\n";
+                    if (city == house->city || city == "ALL"){
+                        cout << "Host username: " << house->owner->getMemberUsername() << "\n"
+                        << "Location: " << house->city << "\n" 
+                        << "Points consuming per day: " << house->points << "\n";
+                        cout << "Minimum Rating required: " << house->minRating << "\n"; 
+                        if (username == "Admin" || username != "Guest"){ //Guest restriction
+                            cout << "Occupier: ";
+                            if (house->occupier != NULL){
+                                cout << house->occupier->getMemberUsername();
+                            } else { cout << 0; }
+                            cout << "\nStart date: " << house->startDate << "\n" 
+                            << "End date: " << house->endDate << "\n" 
+                            << "Rating: " << house->rating << "\n";
+                        } cout << "---------------------------------\n";
+                    }
                 }
             }
         }
@@ -540,7 +542,7 @@ int main() {
                     }
                     if (a == 1){
                         //View houses (Guest restrcition is in the function)
-                        appSys.viewHouses(username, "31-12", "00-00");
+                        appSys.viewHouses(username, "31-12", "00-00", "ALL");
                     }
                 } return 0;
             case 2: //MEMBER
@@ -637,9 +639,18 @@ int main() {
                             endDate = "";
                         }
                         if(a == 3) {
+                            bool check = true;
                             //Search for houses (Any restriction is in the function)
-                            appSys.viewHouses(username, "31-12", "00-00");
-                            bool check = true; //A member can only occupy 1 house
+                            cin.ignore();
+                            while (check){ //Re-use this boolean variable for validation purpose
+                                cout << "Please enter the city you want to search for houses, type \"ALL\" if you want to view all: ";
+                                getline(cin, city);
+                                if (city == "Da Nang" || city == "Hanoi" || city == "Saigon" || city == "ALL"){
+                                    check = false;
+                                } else { cout << "Sorry this function is only available on cities: Hanoi, Saigon and Da Nang.\n"; }
+                            } check = true;
+                            appSys.viewHouses(username, "31-12", "00-00", city);
+                             //A member can only occupy 1 house
                             for (auto house: appSys.houses){
                                 if (house->getHouseOccupier() != NULL){
                                     if (house->getHouseOccupier()->getMemberUsername() == username){ 
@@ -750,7 +761,7 @@ int main() {
                                             endDate = "";
                                         } 
                                     }
-                                    appSys.viewHouses(username, startDate, endDate);
+                                    appSys.viewHouses(username, startDate, endDate, "ALL");
                                     bool check = true; //A member can only occupy 1 house
                                     for (auto house: appSys.houses){
                                         if (house->getHouseOccupier() != NULL){
@@ -829,7 +840,7 @@ int main() {
                     cout << "Login successful" << "\n";
                     //Automatically show all users and houses (no input require and stop program after that - usually used for testing) 
                     appSys.viewMembers();
-                    appSys.viewHouses("Admin", "31-12", "00-00");
+                    appSys.viewHouses("Admin", "31-12", "00-00", "ALL");
                     return 0;
                 }
         }
