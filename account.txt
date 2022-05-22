@@ -1,1 +1,1 @@
-Mike,123456,Rosenberg,XXXXX,500,5,Passenger,lethergo,Mike Rosenberg,1111,500,-1,Runaway,qwerty,Ghost Town,zzzz,100,10,
+Mike,123456,Rosenberg,XXXXX,500,5,Passenger,lethergo,Mike Rosenberg,1111,500,-1,Runaway,qwerty,Ghost Town,zzzz,500,10,Baal,wasd,Ugly Avatar,4444,500,0,

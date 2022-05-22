@@ -183,36 +183,7 @@ public:
             << "---------------------------------\n";
         }
     }
-    // void viewHouses(string username){
-    //     //Get information fo the user (rating and credit points)
-    //     double cre = 10000;
-    //     double rating = 10000;
-    //     if (username != "Guest" && username != "Admin"){
-    //         cre = searchMemByUsername(username)->getMemberCredit();
-    //         rating = searchMemByUsername(username)->getMemberRating();
-    //     }
-
-    //     cout << "---------------------------------\n" 
-    //         <<"List of registered houses: \n";
-    //     for (auto house: houses) {
-    //         //Check user's rating and credit points, only print out if enough
-    //         if (cre > totalPoints(house->startDate, house->endDate, house->points) && rating > house->minRating){
-    //             cout << "Host username: " << house->owner->getMemberUsername() << "\n"
-    //             << "Location: " << house->city << "\n" 
-    //             << "Points consuming per day: " << house->points << "\n";
-    //             cout << "Minimum Rating required: " << house->minRating << "\n"; 
-    //             if (username == "Admin" || username != "Guest"){ //Guest restriction
-    //                 cout << "Occupier: ";
-    //                 if (house->occupier != NULL){
-    //                     cout << house->occupier->getMemberUsername();
-    //                 } else { cout << 0; }
-    //                 cout << "\nStart date: " << house->startDate << "\n" 
-    //                 << "End date: " << house->endDate << "\n" 
-    //                 << "Rating: " << house->rating << "\n";
-    //             } cout << "---------------------------------\n";
-    //         }
-    //     }
-    // }
+    
     void viewHouses(string username, string startDate, string endDate){
         //Get information fo the user (rating and credit points)
         double cre = 10000;
@@ -495,6 +466,14 @@ int main() {
     }
     myFile.close();
 
+    //Extra. Read data from requestWithTime.txt
+    vector<string> requestWithTimeArr;
+    myFile.open("requestWithTime.txt", std::ios::in);
+    while(getline(myFile, line, ',')){
+        requestWithTimeArr.push_back(line);
+    }
+    myFile.close();
+
 
     while(true) {
         cout << "EEET2482/COSC2082 ASSIGNMENT \n"
@@ -702,7 +681,7 @@ int main() {
                                 for (string request: requestTemp){
                                     cout << "User: " << request << "\n";
                                 }
-                            }
+                            } requestTemp.clear();
                             cout << "----------------------\n";
                             if (!loggedin){
                                 cout << "Type the username you want to Approve, or type \"DENY\" to deny all request: ";
@@ -743,16 +722,18 @@ int main() {
                                 }
                             }
                         }
-                        if (a == 6){
+                        if (a == 6){ //Extra functions
                             int b;
-                            while (b != 2){
-                                cout << "Time period features menu: \n"
+                            while (b != 3){
+                                cout << "----------------------------- \n" 
+                                << "Time period features menu: \n"
                                 << "1. Search house with a time period \n"
-                                << "2. Go back \n"
+                                << "2. View requests that have time period \n"
+                                << "3. Go back \n"
                                 << "Enter your choice: ";
                                 cin >> b;
 
-                                if (b == 1){
+                                if (b == 1){ //Show houses that have the time period
                                     while (startDate == ""){
                                         cout << "Please enter start Date (dd-mm): ";
                                         cin >> startDate;
@@ -770,6 +751,67 @@ int main() {
                                         } 
                                     }
                                     appSys.viewHouses(username, startDate, endDate);
+                                    bool check = true; //A member can only occupy 1 house
+                                    for (auto house: appSys.houses){
+                                        if (house->getHouseOccupier() != NULL){
+                                            if (house->getHouseOccupier()->getMemberUsername() == username){ 
+                                                cout << "You are currently occupying a house, you cannot select another once.\n";
+                                                check = false;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (check){ //Print out
+                                        cout << "Enter owner username of the house you want to send request, or type \"CANCEL\" to cancel: ";
+                                        cin >> occupier;
+                                        if (occupier != "CANCEL"){
+                                            if (checkUsername(occupier)){ //Check if input is correct
+                                                //Store the request with time into file
+                                                std::ofstream myFile("requestWithTime.txt", std::ios_base::app);
+                                                myFile << username << "," << occupier << "," << startDate << "," << endDate << ",";
+                                                myFile.close();
+                                                cout << "Request has been sent to " << occupier << "with time from " << startDate << " to " << endDate << ".\n";
+                                            } else { cout << "Invalid username.\n"; }
+                                        }
+                                    }
+                                }
+                                if (b == 2) { //View request from file requestWithTime (note that these time-requests are not associated with normal requests)
+                                    count = 0;
+                                    bool check = true;
+                                    for (int i = 0; i < requestWithTimeArr.size(); i++){
+                                        if (count == 1 && requestWithTimeArr[i] == username){
+                                            requestTemp.push_back(requestWithTimeArr[i-1]);
+                                            requestTemp.push_back(requestWithTimeArr[i+1]);
+                                            requestTemp.push_back(requestWithTimeArr[i+2]);
+                                            count = 0;
+                                            check = false;
+                                        } else if(count == 3){
+                                            count = 0;
+                                        } else { 
+                                            count++; 
+                                        }
+                                    }
+                                    cout << "--------------------------------------------\n" <<"Requests:\n";
+                                    if (check){ 
+                                        cout << "You have no request.\n"; 
+                                    } else {
+                                        count = 1;
+                                        for (int i = 0; i < requestTemp.size(); i++){
+                                            if (count == 1){
+                                                cout << "User: " << requestTemp[i] << " requested your house from ";
+                                            }
+                                            if (count == 2){
+                                                cout << requestTemp[i] << " to ";
+                                            } 
+                                            if (count == 3){
+                                                cout << requestTemp[i] << ".\n";
+                                                count = 0;
+                                            }
+                                            count++;
+                                        }
+                                    }
+                                    requestTemp.clear();
+                                    cout << "--------------------------------------------\n";
                                 }
                             }
                             
