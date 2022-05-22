@@ -192,7 +192,7 @@ public:
             cre = searchMemByUsername(username)->getMemberCredit();
             rating = searchMemByUsername(username)->getMemberRating();
         }
-
+        bool check = false;
         cout << "---------------------------------\n" 
             <<"List of registered houses: \n";
         for (auto house: houses) {
@@ -212,11 +212,17 @@ public:
                             cout << "\nStart date: " << house->startDate << "\n" 
                             << "End date: " << house->endDate << "\n" 
                             << "Rating: " << house->rating << "\n";
-                        } cout << "---------------------------------\n";
+                            check = true;
+                        cout << "---------------------------------\n";
+                        }
                     }
                 }
+            
             }
         }
+        if (!check){
+            cout << "No house matches.\n";
+        } 
     }
 
     Member* searchMemByUsername(string username){
