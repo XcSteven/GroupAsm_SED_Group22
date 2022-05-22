@@ -94,6 +94,7 @@ public:
         this->rating = rating;
         this->minRating = minRating;
     }
+    //Getters
     Member* getHouseOwner(){return owner;}
     Member* getHouseOccupier(){return occupier;}
 friend class System;
@@ -140,6 +141,20 @@ double totalPoints(string startDate, string endDate, double point){
     point = point * day;
     return point;
 }
+//Extra function, used to compare dates to search houses with specific time period
+bool compareDates(string date1, string date2){
+    int day1 = std::stoi(date1.substr(0, 2)); 
+    int month1 = std::stoi(date1.substr(3, 2));
+    int day2 = std::stoi(date2.substr(0, 2)); 
+    int month2 = std::stoi(date2.substr(3, 2));
+    if (month1 == month2 && day1 > day2){
+        return true;
+    } else if (month1 == month2 && day1 == day2) {
+        return true;
+    } else if (month1 > month2) {
+        return true;
+    } else { return false; }
+}
 
 class System {
 public:
@@ -168,7 +183,37 @@ public:
             << "---------------------------------\n";
         }
     }
-    void viewHouses(string username){
+    // void viewHouses(string username){
+    //     //Get information fo the user (rating and credit points)
+    //     double cre = 10000;
+    //     double rating = 10000;
+    //     if (username != "Guest" && username != "Admin"){
+    //         cre = searchMemByUsername(username)->getMemberCredit();
+    //         rating = searchMemByUsername(username)->getMemberRating();
+    //     }
+
+    //     cout << "---------------------------------\n" 
+    //         <<"List of registered houses: \n";
+    //     for (auto house: houses) {
+    //         //Check user's rating and credit points, only print out if enough
+    //         if (cre > totalPoints(house->startDate, house->endDate, house->points) && rating > house->minRating){
+    //             cout << "Host username: " << house->owner->getMemberUsername() << "\n"
+    //             << "Location: " << house->city << "\n" 
+    //             << "Points consuming per day: " << house->points << "\n";
+    //             cout << "Minimum Rating required: " << house->minRating << "\n"; 
+    //             if (username == "Admin" || username != "Guest"){ //Guest restriction
+    //                 cout << "Occupier: ";
+    //                 if (house->occupier != NULL){
+    //                     cout << house->occupier->getMemberUsername();
+    //                 } else { cout << 0; }
+    //                 cout << "\nStart date: " << house->startDate << "\n" 
+    //                 << "End date: " << house->endDate << "\n" 
+    //                 << "Rating: " << house->rating << "\n";
+    //             } cout << "---------------------------------\n";
+    //         }
+    //     }
+    // }
+    void viewHouses(string username, string startDate, string endDate){
         //Get information fo the user (rating and credit points)
         double cre = 10000;
         double rating = 10000;
@@ -181,20 +226,22 @@ public:
             <<"List of registered houses: \n";
         for (auto house: houses) {
             //Check user's rating and credit points, only print out if enough
-            if (cre > totalPoints(house->startDate, house->endDate, house->points) && rating > house->minRating){
-                cout << "Host username: " << house->owner->getMemberUsername() << "\n"
-                << "Location: " << house->city << "\n" 
-                << "Points consuming per day: " << house->points << "\n";
-                cout << "Minimum Rating required: " << house->minRating << "\n"; 
-                if (username == "Admin" || username != "Guest"){ //Guest restriction
-                    cout << "Occupier: ";
-                    if (house->occupier != NULL){
-                        cout << house->occupier->getMemberUsername();
-                    } else { cout << 0; }
-                    cout << "\nStart date: " << house->startDate << "\n" 
-                    << "End date: " << house->endDate << "\n" 
-                    << "Rating: " << house->rating << "\n";
-                } cout << "---------------------------------\n";
+            if (cre > totalPoints(house->startDate, house->endDate, house->points) && rating >= house->minRating){
+                if (compareDates(startDate, house->startDate) && compareDates(house->endDate, endDate)) {
+                    cout << "Host username: " << house->owner->getMemberUsername() << "\n"
+                    << "Location: " << house->city << "\n" 
+                    << "Points consuming per day: " << house->points << "\n";
+                    cout << "Minimum Rating required: " << house->minRating << "\n"; 
+                    if (username == "Admin" || username != "Guest"){ //Guest restriction
+                        cout << "Occupier: ";
+                        if (house->occupier != NULL){
+                            cout << house->occupier->getMemberUsername();
+                        } else { cout << 0; }
+                        cout << "\nStart date: " << house->startDate << "\n" 
+                        << "End date: " << house->endDate << "\n" 
+                        << "Rating: " << house->rating << "\n";
+                    } cout << "---------------------------------\n";
+                }
             }
         }
     }
@@ -202,7 +249,7 @@ public:
     Member* searchMemByUsername(string username){
         for (auto mem: members) {
             if (mem->username == username){return mem;}
-        }
+        } return NULL;
     }
 
     void acceptRequest(string username, string occupier){
@@ -221,6 +268,33 @@ public:
             } else { arrTemp.push_back("0,"); }
             arrTemp.push_back(std::to_string(house->rating) + ",");
             arrTemp.push_back(std::to_string(house->minRating) + ",");
+        }
+        //Rewrite house.txt
+        std::fstream myFile;
+        myFile.open("house.txt", std::ios::out);
+        for (string item: arrTemp){
+            myFile << item;
+        }
+    }
+    void deleteHouse(string username){
+        vector<string> arrTemp; //Store lines that will be written in file
+        for (int i = 0; i < houses.size(); i++){
+            if (houses[i]->owner->getMemberUsername() != username){ //Get all other houses except the target house
+                arrTemp.push_back(houses[i]->owner->getMemberUsername() + ",");
+                arrTemp.push_back(houses[i]->city + ",");
+                arrTemp.push_back(houses[i]->startDate + ",");
+                arrTemp.push_back(houses[i]->endDate + ",");
+                arrTemp.push_back(std::to_string(houses[i]->points) + ",");
+                if (houses[i]->occupier != NULL){
+                    arrTemp.push_back(houses[i]->occupier->getMemberUsername() + ",");
+                    cout << "Oc";
+                } else { arrTemp.push_back("0,");}
+                arrTemp.push_back(std::to_string(houses[i]->rating) + ",");
+                arrTemp.push_back(std::to_string(houses[i]->minRating) + ",");
+            } else {
+                houses.erase(houses.begin() + i); //Remove from houses vector
+                i--;
+            }
         }
         //Rewrite house.txt
         std::fstream myFile;
@@ -297,6 +371,7 @@ bool validateDate(string date){
     }
     return false;
 }
+
 
 int main() {
     //key and a are user's choices
@@ -412,7 +487,7 @@ int main() {
     points = -1;
     startDate = "";
     endDate = "";
-
+    
     //Read data from request.txt
     myFile.open("request.txt", std::ios::in);
     while(getline(myFile, line, ',')){
@@ -477,8 +552,8 @@ int main() {
                             myFile.close();
 
                             //Reward 500 points for registration
-                            cout<<"Your have been rewarded 500 credit points for registering your account!\n";
-                            cout<<"\n";
+                            cout<<"Your have been rewarded 500 credit points for registering your account!\n"
+                            << "Register complete! System will automatically logged out.\n";
                             return 0;
                         } else {
                             cout << "Username has already taken.\n";
@@ -486,7 +561,7 @@ int main() {
                     }
                     if (a == 1){
                         //View houses (Guest restrcition is in the function)
-                        appSys.viewHouses(username);
+                        appSys.viewHouses(username, "31-12", "00-00");
                     }
                 } return 0;
             case 2: //MEMBER
@@ -505,13 +580,15 @@ int main() {
                     cout << "Login failed" << "\n";
                     break;
                 } else {
-                    while (a != 5){
+                    while (a != 7){
                         cout << "Welcome " << username << ":\n"
                         << "1. See your information \n"
                         << "2. Register a house \n"
                         << "3. Search a house \n"
                         << "4. View requests \n"
-                        << "5. Exit \n"
+                        << "5. Unregister a house \n"
+                        << "6. See time period features \n"
+                        << "7. Exit \n"
                         << "Enter your choice: ";
                         cin >> a;
                         if(a == 1){
@@ -525,11 +602,12 @@ int main() {
                         }
                         if(a == 2) {
                             //Register a house
-                            bool check; //A member can only register 1 house
+                            bool check = true; //A member can only register 1 house
                             for (auto house: appSys.houses){
                                 if (house->getHouseOwner()->getMemberUsername() == username){ 
                                     cout << "You have already registered a house.\n";
                                     check = false;
+                                    break;
                                 }
                             }
                             if (check){
@@ -539,7 +617,7 @@ int main() {
                                     getline(cin, city);
                                     if (city == "Da Nang" || city == "Hanoi" || city == "Saigon"){
                                         loggedin = false;
-                                    } else { cout << "Sorry this function is not available in your city.Please try another city.\n"; }
+                                    } else { cout << "Sorry this function is only available on cities: Hanoi, Saigon and Da Nang.\n"; }
                                 } loggedin = true;
                                 while (startDate == ""){
                                     cout << "Please enter start Date (dd-mm): ";
@@ -575,17 +653,20 @@ int main() {
                                 << startDate << "," << endDate << "," << points << "," << "0,0," << minRating << ",";
                                 myFile.close();
                                 cout << "House registered.\n";
-                            }
+                            } 
+                            startDate = "";
+                            endDate = "";
                         }
                         if(a == 3) {
                             //Search for houses (Any restriction is in the function)
-                            appSys.viewHouses(username);
+                            appSys.viewHouses(username, "31-12", "00-00");
                             bool check = true; //A member can only occupy 1 house
                             for (auto house: appSys.houses){
                                 if (house->getHouseOccupier() != NULL){
                                     if (house->getHouseOccupier()->getMemberUsername() == username){ 
                                         cout << "You are currently occupying a house, you cannot select another once.\n";
                                         check = false;
+                                        break;
                                     }
                                 }
                             }
@@ -594,12 +675,11 @@ int main() {
                                 cin >> occupier;
                                 if (occupier != "CANCEL"){
                                     if (checkUsername(occupier)){ //Check if input is correct
-                                        
-
                                         //Store the request into file
                                         std::ofstream myFile("request.txt", std::ios_base::app);
                                         myFile << username << "," << occupier << ",";
                                         myFile.close();
+                                        cout << "Request has been sent to " << occupier <<".\n";
                                     } else { cout << "Invalid username.\n"; }
                                 }
                             }
@@ -639,6 +719,61 @@ int main() {
                                 }
                             } loggedin = true;
                         }
+                        if (a == 5){ //Unregister a house
+                            bool check = false; //Check if user has a house
+                            for (auto house: appSys.houses){
+                                if (house->getHouseOwner()->getMemberUsername() == username){
+                                    check = true;
+                                    break;
+                                }
+                            }
+                            if (!check){
+                                cout << "You haven't registered anyhouse.\n";
+                            } else {
+                                while (check) { //Validate answer
+                                    cout << "Type \"CONFIRM\" to unregister your house or type \"CANCEL\" to cancel: \n";
+                                    cin >> occupier; //REUSE variable as answer
+                                    if (occupier == "CONFIRM" || occupier == "CANCEL"){
+                                        check = false;
+                                    } else { cout << "Sorry I couldn't get that, please try again.\n";}
+                                } 
+                                if (occupier == "CONFIRM") {
+                                    appSys.deleteHouse(username);
+                                    cout << "Your house has been unregistered.\n";
+                                }
+                            }
+                        }
+                        if (a == 6){
+                            int b;
+                            while (b != 2){
+                                cout << "Time period features menu: \n"
+                                << "1. Search house with a time period \n"
+                                << "2. Go back \n"
+                                << "Enter your choice: ";
+                                cin >> b;
+
+                                if (b == 1){
+                                    while (startDate == ""){
+                                        cout << "Please enter start Date (dd-mm): ";
+                                        cin >> startDate;
+                                        if (!validateDate(startDate)){ 
+                                            cout << "Invalid input. Please make sure to input with format: dd-mm\n";
+                                            startDate = "";
+                                        } 
+                                    }
+                                    while (endDate == ""){
+                                        cout << "Please enter end Date (dd-mm): ";
+                                        cin >> endDate;
+                                        if (!validateDate(endDate)){ 
+                                            cout << "Invalid input. Please make sure to input with format: dd-mm\n";
+                                            endDate = "";
+                                        } 
+                                    }
+                                    appSys.viewHouses(username, startDate, endDate);
+                                }
+                            }
+                            
+                        }
                     } return 0;
                 }
             case 3: //ADMIN
@@ -652,7 +787,7 @@ int main() {
                     cout << "Login successful" << "\n";
                     //Automatically show all users and houses (no input require and stop program after that - usually used for testing) 
                     appSys.viewMembers();
-                    appSys.viewHouses("Admin");
+                    appSys.viewHouses("Admin", "31-12", "00-00");
                     return 0;
                 }
         }
